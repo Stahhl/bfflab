@@ -4,11 +4,11 @@
   import Counter from "./lib/Counter.svelte";
   import { onMount } from "svelte";
 
-  let user = {};
+  let user: any = {};
   let isAuthenticated = false;
 
   onMount(async () => {
-    const res = await fetch(`http://localhost:5204/user`);
+    const res = await fetch("http://localhost:5204/user", {credentials: "include"});
     if (res.ok) {
       isAuthenticated = true;
       user = await res.json();
