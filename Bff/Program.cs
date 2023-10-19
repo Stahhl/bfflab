@@ -2,15 +2,14 @@ using System.Security.Claims;
 using Bff;
 using Bff.Authentication;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins("http://localhost:5173").AllowCredentials()));
 
 builder.AddAuthentication();
-builder.Services.AddAuthorizationBuilder();
+// builder.Services.AddAuthorizationBuilder();
 
 var app = builder.Build();
 
@@ -26,14 +25,14 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
-app.UseAuthorization();
+// app.UseAuthorization();
 
 app.MapGet("/user", (HttpContext context) =>
 {
     var user = context.User;
     var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
-    if (!isAuthenticated || user.Identity is null) return Results.Forbid();
+    if (!isAuthenticated || user.Identity is null) return Results.Unauthorized();
 
     var claims = ((ClaimsIdentity)user.Identity).Claims.Select(c =>
             new { type = c.Type, value = c.Value })
@@ -71,6 +70,7 @@ app.MapGet("/signin", async (HttpContext context, [FromQuery] string? origin) =>
 
     // Write the login cookie
     await Signer.SignIn(id, name, token, "Auth0").ExecuteAsync(context);
+    // await Signer.SignIn(context, id, name, token, "Auth0");
 
     // Delete the external cookie
     await context.SignOutAsync(AuthenticatonSchemes.ExternalScheme);
