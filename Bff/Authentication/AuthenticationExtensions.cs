@@ -9,6 +9,31 @@ public static class AuthenticationExtensions
 {
     private delegate void ExternalAuthProvider(AuthenticationBuilder authenticationBuilder, Action<object> configure);
 
+    public static WebApplicationBuilder AddWso2Auth(this WebApplicationBuilder builder)
+    {
+        // Our default scheme is cookies
+        var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        // Add the default authentication cookie that will be used between the front end and the backend.
+        authenticationBuilder.AddCookie();
+
+        // This is the cookie that will store the user information from the external login provider
+        authenticationBuilder.AddCookie(AuthenticatonSchemes.ExternalScheme);
+
+        authenticationBuilder.AddOpenIdConnect("WSO2",
+            options => OpenId.ConfigureOpenIdConnect(options, builder.Configuration));
+        
+        builder.Services.AddOptions<OpenIdConnectOptions>("WSO2")
+            .PostConfigure(o =>
+            {
+                // The Auth0 APIs don't let you set the sign in scheme, it defaults to the default sign in scheme.
+                // Use named options to configure the underlying OpenIdConnectOptions's sign in scheme instead.
+                o.SignInScheme = AuthenticatonSchemes.ExternalScheme;
+            });
+        
+        return builder;
+    }
+    
     public static WebApplicationBuilder AddAuthentication(this WebApplicationBuilder builder)
     {
         // Our default scheme is cookies
